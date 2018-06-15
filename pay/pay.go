@@ -84,7 +84,7 @@ func NewPay(ctx *context.Context) *Pay {
 }
 
 // PrePayID will request wechat merchant api and request for a pre payment order id
-func (pcf *Pay) PrePayID(p *Params) (prePayID string, err error) {
+func (pcf *Pay) PrePayID(p *Params) (result *payResult, err error) {
 	nonceStr := util.RandomStr(32)
 	tradeType := "JSAPI"
 	template := "appid=%s&body=%s&mch_id=%s&nonce_str=%s&notify_url=%s&openid=%s&out_trade_no=%s&spbill_create_ip=%s&total_fee=%s&trade_type=%s&key=%s"
@@ -105,19 +105,19 @@ func (pcf *Pay) PrePayID(p *Params) (prePayID string, err error) {
 	}
 	rawRet, err := util.PostXML(payGateway, request)
 	if err != nil {
-		return "", errors.New(err.Error() + " parameters : " + str)
+		return nil, errors.New(err.Error() + " parameters : " + str)
 	}
 	payRet := payResult{}
 	err = xml.Unmarshal(rawRet, &payRet)
 	if err != nil {
-		return "", errors.New(err.Error())
+		return nil, errors.New(err.Error())
 	}
 	if payRet.ReturnCode == "SUCCESS" {
 		//pay success
 		if payRet.ResultCode == "SUCCESS" {
-			return payRet.PrePayID, nil
+			return &payRet, nil
 		}
-		return "", errors.New(payRet.ErrCode + payRet.ErrCodeDes)
+		return nil, errors.New(payRet.ErrCode + payRet.ErrCodeDes)
 	}
-	return "", errors.New("[msg : xmlUnmarshalError] [rawReturn : " + string(rawRet) + "] [params : " + str + "] [sign : " + sign + "]")
+	return nil, errors.New("[msg : xmlUnmarshalError] [rawReturn : " + string(rawRet) + "] [params : " + str + "] [sign : " + sign + "]")
 }
